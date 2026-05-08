@@ -31,4 +31,5 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;    const message = awai
   }
 });
 
-app.listen(3001, () => console.log('Serveur demarre sur le port 3001'));
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log('Serveur demarre sur le port ' + PORT));
