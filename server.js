@@ -4,21 +4,31 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 app.use(cors({ origin: '*' }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 app.post('/api/generer', async (req, res) => {
-  const { description, plateforme, ton } = req.body;
+  const { description, plateforme, ton, image } = req.body;
   try {
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: `Tu es un expert en vente sur ${plateforme}. Ton de l'annonce : ${ton}. Genere une annonce et analyse complète pour : "${description}".
-          
+    const contenu = [];
+
+    if (image) {
+      contenu.push({
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: image.type,
+          data: image.data,
+        }
+      });
+    }
+
+    contenu.push({
+      type: 'text',
+      text: `Tu es un expert en vente sur ${plateforme}. Ton de l'annonce : ${ton}.
+${image ? "Analyse cette photo et génère une annonce optimisée pour l'article que tu vois." : `Genere une annonce pour : "${description}".`}
+
 Reponds UNIQUEMENT avec ce JSON sans texte avant ou apres :
 {
   "titre": "titre accrocheur max 60 caracteres",
@@ -38,9 +48,14 @@ Reponds UNIQUEMENT avec ce JSON sans texte avant ou apres :
   "points_forts": ["point fort 1", "point fort 2"],
   "points_amelioration": ["amelioration 1", "amelioration 2"]
 }`
-        }
-      ]
     });
+
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: contenu }]
+    });
+
     const texte = message.content[0].text;
     console.log('Reponse:', texte);
     const json = JSON.parse(texte.replace(/```json|```/g, '').trim());

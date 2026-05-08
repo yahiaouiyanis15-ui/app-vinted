@@ -17,6 +17,9 @@ function App() {
   const [codePromo, setCodePromo] = useState("");
   const [codeActif, setCodeActif] = useState(() => localStorage.getItem("codeActif") === "true");
   const [messageCode, setMessageCode] = useState("");
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [mode, setMode] = useState("texte");
 
   const estGratuit = compteur < MAX_GRATUIT;
   const peutGenerer = estGratuit || codeActif;
@@ -31,8 +34,21 @@ function App() {
     }
   };
 
+  const handleImage = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target.result.split(",")[1];
+      setImage({ data: base64, type: file.type });
+      setImagePreview(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const generer = async () => {
-    if (!description.trim()) { setErreur("Decris ton article !"); return; }
+    if (mode === "texte" && !description.trim()) { setErreur("Decris ton article !"); return; }
+    if (mode === "photo" && !image) { setErreur("Ajoute une photo !"); return; }
     if (!peutGenerer) { setErreur("Limite gratuite atteinte ! Abonne-toi pour continuer."); return; }
     setLoading(true);
     setErreur("");
@@ -41,7 +57,7 @@ function App() {
       const response = await fetch("https://app-vinted.onrender.com/api/generer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, plateforme, ton }),
+        body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" ? image : null }),
       });
       const data = await response.json();
       if (data.erreur) {
@@ -53,7 +69,7 @@ function App() {
           setCompteur(newCompteur);
           localStorage.setItem("compteur", newCompteur);
         }
-        const newHistorique = [{ date: new Date().toLocaleDateString(), plateforme, description, ...data }, ...historique].slice(0, 10);
+        const newHistorique = [{ date: new Date().toLocaleDateString(), plateforme, description: mode === "photo" ? "📷 Analyse photo" : description, ...data }, ...historique].slice(0, 10);
         setHistorique(newHistorique);
         localStorage.setItem("historique", JSON.stringify(newHistorique));
       }
@@ -155,21 +171,46 @@ function App() {
             </div>
           </div>
 
+          {/* Mode texte ou photo */}
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Décris ton article</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Jean Levis 501 taille 40, bleu, tres bon etat, porte 2 fois..." style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", height: 110, resize: "vertical", fontSize: 14, boxSizing: "border-box", color: "white", backgroundColor: "#333" }} />
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Mode</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setMode("texte")} style={{ flex: 1, padding: 10, borderRadius: 8, border: `2px solid ${mode === "texte" ? "#09B1BA" : "#ddd"}`, backgroundColor: mode === "texte" ? "#e8f8f8" : "white", cursor: "pointer", fontWeight: "bold", color: "#333" }}>
+                ✏️ Description texte
+              </button>
+              <button onClick={() => setMode("photo")} style={{ flex: 1, padding: 10, borderRadius: 8, border: `2px solid ${mode === "photo" ? "#09B1BA" : "#ddd"}`, backgroundColor: mode === "photo" ? "#e8f8f8" : "white", cursor: "pointer", fontWeight: "bold", color: "#333" }}>
+                📷 Analyser une photo
+              </button>
+            </div>
           </div>
+
+          {mode === "texte" && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Décris ton article</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Jean Levis 501 taille 40, bleu, tres bon etat, porte 2 fois..." style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", height: 110, resize: "vertical", fontSize: 14, boxSizing: "border-box", color: "white", backgroundColor: "#333" }} />
+            </div>
+          )}
+
+          {mode === "photo" && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Ajoute une photo de ton article</label>
+              <input type="file" accept="image/*" onChange={handleImage} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", backgroundColor: "#333", color: "white", boxSizing: "border-box" }} />
+              {imagePreview && (
+                <div style={{ marginTop: 10, textAlign: "center" }}>
+                  <img src={imagePreview} alt="preview" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, border: "2px solid #09B1BA" }} />
+                </div>
+              )}
+            </div>
+          )}
 
           {erreur && <p style={{ color: "red", marginBottom: 10 }}>{erreur}</p>}
 
           <button onClick={generer} disabled={loading || !peutGenerer} style={{ width: "100%", padding: 14, backgroundColor: peutGenerer ? "#09B1BA" : "#ccc", color: "white", border: "none", borderRadius: 8, fontSize: 16, cursor: peutGenerer ? "pointer" : "not-allowed", fontWeight: "bold", marginBottom: 20 }}>
-            {loading ? "⏳ Génération en cours..." : "✨ Générer mon annonce"}
+            {loading ? "⏳ Analyse en cours..." : mode === "photo" ? "📷 Analyser la photo" : "✨ Générer mon annonce"}
           </button>
 
           {resultat && (
             <div style={{ marginTop: 10 }}>
-
-              {/* Ton annonce */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Ton annonce</h3>
@@ -195,7 +236,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Score */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>🏆 Score de l'annonce</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -215,7 +255,6 @@ function App() {
                 ))}
               </div>
 
-              {/* Analyse marché */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📊 Analyse du marché</h3>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -238,7 +277,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Prix */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>💰 Optimisation du prix</h3>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -257,7 +295,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Conseils photos */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📸 Conseils photos</h3>
                 {Array.isArray(resultat.photos) && resultat.photos.map((p, i) => (
@@ -265,14 +302,12 @@ function App() {
                 ))}
               </div>
 
-              {/* Erreurs à éviter */}
               <div style={{ padding: 16, backgroundColor: "#fff0f0", borderRadius: 12, border: "1px solid #ffcccc", marginBottom: 16 }}>
                 <h3 style={{ color: "#ff4444", margin: "0 0 12px" }}>⚠️ Erreurs à éviter</h3>
                 {Array.isArray(resultat.erreurs) && resultat.erreurs.map((e, i) => (
                   <p key={i} style={{ margin: "4px 0", color: "#333", fontSize: 14 }}>❌ {e}</p>
                 ))}
               </div>
-
             </div>
           )}
         </>
