@@ -2,6 +2,7 @@ import { useState } from "react";
 
 const MAX_GRATUIT = 3;
 const CODES_PROMO = ["AX7K9-VINTED-M2P4Q","BF3N8-VINTED-J6R1W","CQ5T2-VINTED-H9L7E","DM8Y6-VINTED-K3N5X","EP2W4-VINTED-G7T8Z","FR9K1-VINTED-B4M6V","GH6J3-VINTED-N2P9Y","HN4X7-VINTED-C8R5T","IQ1M5-VINTED-F6W3K","JB8T9-VINTED-L2X7P","KW3R6-VINTED-D5N4Q","LY7P2-VINTED-M9K1E","MG5N8-VINTED-R3T6Z","NX2K4-VINTED-W7B9V","OT9J1-VINTED-H4L5Y","PQ6W3-VINTED-C8M2X","RF4B7-VINTED-G1N9K","SK8Y5-VINTED-J6T3P","TH1M9-VINTED-B4R7Q","UJ3P6-VINTED-F2W8E","VL7K2-VINTED-N5X4Z","WN4T8-VINTED-M1B6V","XQ9R3-VINTED-K7L2Y","YB6W5-VINTED-D3N8T","ZF2M7-VINTED-R9P4X","AC8J4-VINTED-G5T1K","BD5N1-VINTED-W6M3Q","CE3T6-VINTED-H2R9Z","DG7K8-VINTED-B4L5V","EH1W2-VINTED-N7X6Y"];
+
 function App() {
   const [description, setDescription] = useState("");
   const [plateforme, setPlateforme] = useState("Vinted");
@@ -64,10 +65,17 @@ function App() {
 
   const copierAnnonce = () => {
     if (!resultat) return;
-    const texte = `${resultat.titre}\n\n${resultat.description}\n\nPrix : ${resultat.prix}\n\nMots-clés : ${resultat.mots_cles?.join(", ")}`;
+    const texte = `${resultat.titre}\n\n${resultat.description}\n\nPrix : ${resultat.prix}€\n\nMots-clés : ${resultat.mots_cles?.join(", ")}`;
     navigator.clipboard.writeText(texte);
     setCopie(true);
     setTimeout(() => setCopie(false), 2000);
+  };
+
+  const couleurConcurrence = (c) => {
+    if (!c) return "#888";
+    if (c.toLowerCase() === "faible") return "#4CAF50";
+    if (c.toLowerCase() === "moyenne") return "#ff9900";
+    return "#ff4444";
   };
 
   return (
@@ -88,7 +96,7 @@ function App() {
               {estGratuit ? `✅ ${MAX_GRATUIT - compteur} annonce(s) gratuite(s) restante(s)` : "🔒 Limite atteinte — Abonne-toi !"}
             </span>
             {!estGratuit && (
-              <button onClick={() => window.open("https://buy.stripe.com/4gMeVe99t6qfaKD2TIcfK05", "_blank")} style={{ backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontWeight: "bold" }}>
+              <button onClick={() => window.open("TONLIENSTRIPE", "_blank")} style={{ backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontWeight: "bold" }}>
                 S'abonner 4,99€/mois
               </button>
             )}
@@ -146,33 +154,112 @@ function App() {
           </button>
 
           {resultat && (
-            <div style={{ padding: 20, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h2 style={{ color: "#09B1BA", margin: 0 }}>✅ Ton annonce</h2>
-                <button onClick={copierAnnonce} style={{ backgroundColor: copie ? "#4CAF50" : "#09B1BA", color: "white", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontWeight: "bold" }}>
-                  {copie ? "✅ Copié !" : "📋 Tout copier"}
-                </button>
+            <div style={{ marginTop: 10 }}>
+
+              {/* Score */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>🏆 Score de l'annonce</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                  <div style={{ width: 60, height: 60, borderRadius: "50%", backgroundColor: resultat.score >= 8 ? "#4CAF50" : resultat.score >= 6 ? "#ff9900" : "#ff4444", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 22, fontWeight: "bold" }}>
+                    {resultat.score}/10
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, color: "#333", fontWeight: "bold" }}>Points forts :</p>
+                    {Array.isArray(resultat.points_forts) && resultat.points_forts.map((p, i) => (
+                      <p key={i} style={{ margin: "2px 0", color: "#4CAF50", fontSize: 13 }}>✅ {p}</p>
+                    ))}
+                  </div>
+                </div>
+                <p style={{ margin: 0, color: "#333", fontWeight: "bold" }}>À améliorer :</p>
+                {Array.isArray(resultat.points_amelioration) && resultat.points_amelioration.map((p, i) => (
+                  <p key={i} style={{ margin: "2px 0", color: "#ff9900", fontSize: 13 }}>⚠️ {p}</p>
+                ))}
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontWeight: "bold", color: "#333" }}>📌 Titre</label>
-                <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", color: "#333" }}>{resultat.titre}</p>
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontWeight: "bold", color: "#333" }}>📝 Description</label>
-                <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", lineHeight: 1.6, color: "#333" }}>{resultat.description}</p>
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontWeight: "bold", color: "#333" }}>💰 Prix suggéré</label>
-                <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", fontSize: 22, fontWeight: "bold", color: "#09B1BA" }}>{resultat.prix} €</p>
-              </div>
-              <div>
-                <label style={{ fontWeight: "bold", color: "#333" }}>🏷️ Mots-clés</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-                  {Array.isArray(resultat.mots_cles) && resultat.mots_cles.map((mot, i) => (
-                    <span key={i} style={{ backgroundColor: "#09B1BA", color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 14 }}>{mot}</span>
-                  ))}
+
+              {/* Analyse marché */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📊 Analyse du marché</h3>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Concurrence</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: couleurConcurrence(resultat.concurrence) }}>{resultat.concurrence}</p>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Délai de vente estimé</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#333" }}>⏱️ {resultat.delai_vente}</p>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Meilleur moment</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#333" }}>📅 {resultat.meilleur_moment}</p>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Meilleure plateforme</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#09B1BA" }}>🛒 {resultat.meilleure_plateforme}</p>
+                  </div>
                 </div>
               </div>
+
+              {/* Prix */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>💰 Optimisation du prix</h3>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "2px solid #09B1BA", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Prix suggéré</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#09B1BA", fontSize: 20 }}>{resultat.prix} €</p>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Prix psychologique</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#333", fontSize: 18 }}>{resultat.prix_psychologique} €</p>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Fourchette</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#333" }}>{resultat.prix_min}€ — {resultat.prix_max}€</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Annonce */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Ton annonce</h3>
+                  <button onClick={copierAnnonce} style={{ backgroundColor: copie ? "#4CAF50" : "#09B1BA", color: "white", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontWeight: "bold" }}>
+                    {copie ? "✅ Copié !" : "📋 Copier"}
+                  </button>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>📌 Titre</label>
+                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", color: "#333" }}>{resultat.titre}</p>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>📝 Description</label>
+                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", lineHeight: 1.6, color: "#333" }}>{resultat.description}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>🏷️ Mots-clés</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                    {Array.isArray(resultat.mots_cles) && resultat.mots_cles.map((mot, i) => (
+                      <span key={i} style={{ backgroundColor: "#09B1BA", color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 14 }}>{mot}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Conseils photos */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📸 Conseils photos</h3>
+                {Array.isArray(resultat.photos) && resultat.photos.map((p, i) => (
+                  <p key={i} style={{ margin: "4px 0", color: "#333", fontSize: 14 }}>📷 {p}</p>
+                ))}
+              </div>
+
+              {/* Erreurs à éviter */}
+              <div style={{ padding: 16, backgroundColor: "#fff0f0", borderRadius: 12, border: "1px solid #ffcccc", marginBottom: 16 }}>
+                <h3 style={{ color: "#ff4444", margin: "0 0 12px" }}>⚠️ Erreurs à éviter</h3>
+                {Array.isArray(resultat.erreurs) && resultat.erreurs.map((e, i) => (
+                  <p key={i} style={{ margin: "4px 0", color: "#333", fontSize: 14 }}>❌ {e}</p>
+                ))}
+              </div>
+
             </div>
           )}
         </>
