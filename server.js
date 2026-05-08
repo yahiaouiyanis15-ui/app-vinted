@@ -10,8 +10,7 @@ app.post('/api/generer', async (req, res) => {
 const { description, plateforme, ton } = req.body;  
   try {
     const Anthropic = require('@anthropic-ai/sdk');
-const ANTHROPIC_API_KEY = "PLACEHOLDER";   
-    const message = await client.messages.create({
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;    const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       messages: [
