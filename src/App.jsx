@@ -23,8 +23,7 @@ function App() {
     setErreur("");
     setResultat(null);
     try {
-const response = await fetch("https://app-vinted-production.up.railway.app/api/generer", {        method: "POST",
-        headers: { "Content-Type": "application/json" },
+const response = await fetch("https://app-vinted.onrender.com/api/generer", {        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description, plateforme, ton }),
       });
       const data = await response.json();
