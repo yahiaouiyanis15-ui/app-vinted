@@ -23,7 +23,9 @@ function App() {
     setErreur("");
     setResultat(null);
     try {
-const response = await fetch("https://app-vinted.onrender.com/api/generer", {        headers: { "Content-Type": "application/json" },
+      const response = await fetch("https://app-vinted.onrender.com/api/generer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description, plateforme, ton }),
       });
       const data = await response.json();
@@ -54,7 +56,6 @@ const response = await fetch("https://app-vinted.onrender.com/api/generer", {   
 
   return (
     <div style={{ maxWidth: 650, margin: "0 auto", fontFamily: "Arial", padding: 20, minHeight: "100vh" }}>
-
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <h1 style={{ color: "#09B1BA", margin: 0, fontSize: 28 }}>🛍️ AnnonceAI</h1>
         <p style={{ color: "#888", margin: "4px 0 0" }}>Génère des annonces qui vendent en 5 secondes</p>
@@ -119,22 +120,18 @@ const response = await fetch("https://app-vinted.onrender.com/api/generer", {   
                   {copie ? "✅ Copié !" : "📋 Tout copier"}
                 </button>
               </div>
-
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontWeight: "bold", color: "#333" }}>📌 Titre</label>
                 <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", color: "#333" }}>{resultat.titre}</p>
               </div>
-
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontWeight: "bold", color: "#333" }}>📝 Description</label>
                 <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", lineHeight: 1.6, color: "#333" }}>{resultat.description}</p>
               </div>
-
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontWeight: "bold", color: "#333" }}>💰 Prix suggéré</label>
                 <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", fontSize: 22, fontWeight: "bold", color: "#09B1BA" }}>{resultat.prix} €</p>
               </div>
-
               <div>
                 <label style={{ fontWeight: "bold", color: "#333" }}>🏷️ Mots-clés</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
