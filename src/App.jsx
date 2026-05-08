@@ -78,6 +78,19 @@ function App() {
     return "#ff4444";
   };
 
+  const couleurScore = (s) => {
+    if (s > 7) return "#4CAF50";
+    if (s >= 5) return "#ff9900";
+    return "#ff4444";
+  };
+
+  const formatPlateforme = (p) => {
+    if (!p) return "";
+    const lower = p.toLowerCase();
+    if (lower === "les deux" || lower === "vinted et leboncoin") return "Vinted et Leboncoin";
+    return p;
+  };
+
   return (
     <div style={{ maxWidth: 650, margin: "0 auto", fontFamily: "Arial", padding: 20, minHeight: "100vh" }}>
       <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -156,11 +169,37 @@ function App() {
           {resultat && (
             <div style={{ marginTop: 10 }}>
 
+              {/* Ton annonce */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Ton annonce</h3>
+                  <button onClick={copierAnnonce} style={{ backgroundColor: copie ? "#4CAF50" : "#09B1BA", color: "white", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontWeight: "bold" }}>
+                    {copie ? "✅ Copié !" : "📋 Copier"}
+                  </button>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>📌 Titre</label>
+                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", color: "#333" }}>{resultat.titre}</p>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>📝 Description</label>
+                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", lineHeight: 1.6, color: "#333" }}>{resultat.description}</p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>🏷️ Mots-clés</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                    {Array.isArray(resultat.mots_cles) && resultat.mots_cles.map((mot, i) => (
+                      <span key={i} style={{ backgroundColor: "#09B1BA", color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 14 }}>{mot}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Score */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>🏆 Score de l'annonce</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                  <div style={{ width: 60, height: 60, borderRadius: "50%", backgroundColor: resultat.score >= 8 ? "#4CAF50" : resultat.score >= 6 ? "#ff9900" : "#ff4444", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 22, fontWeight: "bold" }}>
+                  <div style={{ width: 60, height: 60, borderRadius: "50%", backgroundColor: couleurScore(resultat.score), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 18, fontWeight: "bold", flexShrink: 0 }}>
                     {resultat.score}/10
                   </div>
                   <div>
@@ -194,7 +233,7 @@ function App() {
                   </div>
                   <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
                     <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Meilleure plateforme</p>
-                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#09B1BA" }}>🛒 {resultat.meilleure_plateforme}</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#09B1BA" }}>🛒 {formatPlateforme(resultat.meilleure_plateforme)}</p>
                   </div>
                 </div>
               </div>
@@ -214,32 +253,6 @@ function App() {
                   <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
                     <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Fourchette</p>
                     <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#333" }}>{resultat.prix_min}€ — {resultat.prix_max}€</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Annonce */}
-              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Ton annonce</h3>
-                  <button onClick={copierAnnonce} style={{ backgroundColor: copie ? "#4CAF50" : "#09B1BA", color: "white", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontWeight: "bold" }}>
-                    {copie ? "✅ Copié !" : "📋 Copier"}
-                  </button>
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ fontWeight: "bold", color: "#333" }}>📌 Titre</label>
-                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", color: "#333" }}>{resultat.titre}</p>
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ fontWeight: "bold", color: "#333" }}>📝 Description</label>
-                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", lineHeight: 1.6, color: "#333" }}>{resultat.description}</p>
-                </div>
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#333" }}>🏷️ Mots-clés</label>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-                    {Array.isArray(resultat.mots_cles) && resultat.mots_cles.map((mot, i) => (
-                      <span key={i} style={{ backgroundColor: "#09B1BA", color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 14 }}>{mot}</span>
-                    ))}
                   </div>
                 </div>
               </div>
