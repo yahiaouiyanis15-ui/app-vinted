@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 const MAX_GRATUIT = 3;
+const CODES_PROMO = ["YANIS2024", "PREMIUM1", "VINTED99"];
 
 function App() {
   const [description, setDescription] = useState("");
@@ -13,12 +14,26 @@ function App() {
   const [historique, setHistorique] = useState(() => JSON.parse(localStorage.getItem("historique") || "[]"));
   const [copie, setCopie] = useState(false);
   const [onglet, setOnglet] = useState("generateur");
+  const [codePromo, setCodePromo] = useState("");
+  const [codeActif, setCodeActif] = useState(() => localStorage.getItem("codeActif") === "true");
+  const [messageCode, setMessageCode] = useState("");
 
   const estGratuit = compteur < MAX_GRATUIT;
+  const peutGenerer = estGratuit || codeActif;
+
+  const activerCode = () => {
+    if (CODES_PROMO.includes(codePromo.toUpperCase().trim())) {
+      setCodeActif(true);
+      localStorage.setItem("codeActif", "true");
+      setMessageCode("✅ Code activé ! Accès illimité débloqué !");
+    } else {
+      setMessageCode("❌ Code invalide, réessaie !");
+    }
+  };
 
   const generer = async () => {
     if (!description.trim()) { setErreur("Decris ton article !"); return; }
-    if (!estGratuit) { setErreur("Limite gratuite atteinte ! Abonne-toi pour continuer."); return; }
+    if (!peutGenerer) { setErreur("Limite gratuite atteinte ! Abonne-toi pour continuer."); return; }
     setLoading(true);
     setErreur("");
     setResultat(null);
@@ -33,9 +48,11 @@ function App() {
         setErreur(data.erreur);
       } else {
         setResultat(data);
-        const newCompteur = compteur + 1;
-        setCompteur(newCompteur);
-        localStorage.setItem("compteur", newCompteur);
+        if (!codeActif) {
+          const newCompteur = compteur + 1;
+          setCompteur(newCompteur);
+          localStorage.setItem("compteur", newCompteur);
+        }
         const newHistorique = [{ date: new Date().toLocaleDateString(), plateforme, description, ...data }, ...historique].slice(0, 10);
         setHistorique(newHistorique);
         localStorage.setItem("historique", JSON.stringify(newHistorique));
@@ -61,16 +78,33 @@ function App() {
         <p style={{ color: "#888", margin: "4px 0 0" }}>Génère des annonces qui vendent en 5 secondes</p>
       </div>
 
-      <div style={{ backgroundColor: estGratuit ? "#e8f8f8" : "#fff0f0", border: `1px solid ${estGratuit ? "#09B1BA" : "#ff4444"}`, borderRadius: 10, padding: "10px 16px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ color: estGratuit ? "#09B1BA" : "#ff4444", fontWeight: "bold" }}>
-          {estGratuit ? `✅ ${MAX_GRATUIT - compteur} annonce(s) gratuite(s) restante(s)` : "🔒 Limite atteinte — Abonne-toi !"}
-        </span>
-        {!estGratuit && (
-          <button onClick={() => window.open("https://buy.stripe.com/4gMeVe99t6qfaKD2TIcfK05", "_blank")} style={{ backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontWeight: "bold" }}>
-  S'abonner 4,99€/mois
-</button>
-        )}
-      </div>
+      {codeActif ? (
+        <div style={{ backgroundColor: "#e8f8f8", border: "1px solid #09B1BA", borderRadius: 10, padding: "10px 16px", marginBottom: 20, textAlign: "center" }}>
+          <span style={{ color: "#09B1BA", fontWeight: "bold" }}>💎 Accès Premium — Annonces illimitées !</span>
+        </div>
+      ) : (
+        <div style={{ backgroundColor: estGratuit ? "#e8f8f8" : "#fff0f0", border: `1px solid ${estGratuit ? "#09B1BA" : "#ff4444"}`, borderRadius: 10, padding: "10px 16px", marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: estGratuit ? 0 : 10 }}>
+            <span style={{ color: estGratuit ? "#09B1BA" : "#ff4444", fontWeight: "bold" }}>
+              {estGratuit ? `✅ ${MAX_GRATUIT - compteur} annonce(s) gratuite(s) restante(s)` : "🔒 Limite atteinte — Abonne-toi !"}
+            </span>
+            {!estGratuit && (
+              <button onClick={() => window.open("https://buy.stripe.com/4gMeVe99t6qfaKD2TIcfK05", "_blank")} style={{ backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontWeight: "bold" }}>
+                S'abonner 4,99€/mois
+              </button>
+            )}
+          </div>
+          {!estGratuit && (
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <input value={codePromo} onChange={(e) => setCodePromo(e.target.value)} placeholder="Tu as un code promo ?" style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid #ddd", fontSize: 14 }} />
+              <button onClick={activerCode} style={{ backgroundColor: "#09B1BA", color: "white", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontWeight: "bold" }}>
+                Activer
+              </button>
+            </div>
+          )}
+          {messageCode && <p style={{ color: messageCode.includes("✅") ? "green" : "red", margin: "8px 0 0", fontSize: 14 }}>{messageCode}</p>}
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {["generateur", "historique"].map(o => (
@@ -108,7 +142,7 @@ function App() {
 
           {erreur && <p style={{ color: "red", marginBottom: 10 }}>{erreur}</p>}
 
-          <button onClick={generer} disabled={loading || !estGratuit} style={{ width: "100%", padding: 14, backgroundColor: estGratuit ? "#09B1BA" : "#ccc", color: "white", border: "none", borderRadius: 8, fontSize: 16, cursor: estGratuit ? "pointer" : "not-allowed", fontWeight: "bold", marginBottom: 20 }}>
+          <button onClick={generer} disabled={loading || !peutGenerer} style={{ width: "100%", padding: 14, backgroundColor: peutGenerer ? "#09B1BA" : "#ccc", color: "white", border: "none", borderRadius: 8, fontSize: 16, cursor: peutGenerer ? "pointer" : "not-allowed", fontWeight: "bold", marginBottom: 20 }}>
             {loading ? "⏳ Génération en cours..." : "✨ Générer mon annonce"}
           </button>
 
