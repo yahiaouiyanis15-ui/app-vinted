@@ -21,6 +21,15 @@ function App() {
   const [imagePreview, setImagePreview] = useState(null);
   const [mode, setMode] = useState("texte");
 
+  // Optimiseur
+  const [titreExistant, setTitreExistant] = useState("");
+  const [descExistante, setDescExistante] = useState("");
+  const [prixExistant, setPrixExistant] = useState("");
+  const [resultatOptimise, setResultatOptimise] = useState(null);
+  const [loadingOptimise, setLoadingOptimise] = useState(false);
+  const [erreurOptimise, setErreurOptimise] = useState("");
+  const [copieOptimise, setCopieOptimise] = useState(false);
+
   const estGratuit = compteur < MAX_GRATUIT;
   const peutGenerer = estGratuit || codeActif;
 
@@ -79,12 +88,49 @@ function App() {
     setLoading(false);
   };
 
+  const optimiser = async () => {
+    if (!titreExistant.trim() && !descExistante.trim()) { setErreurOptimise("Colle ton annonce existante !"); return; }
+    if (!peutGenerer) { setErreurOptimise("Limite gratuite atteinte ! Abonne-toi pour continuer."); return; }
+    setLoadingOptimise(true);
+    setErreurOptimise("");
+    setResultatOptimise(null);
+    try {
+      const response = await fetch("https://app-vinted.onrender.com/api/optimiser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titre: titreExistant, description: descExistante, prix: prixExistant, plateforme }),
+      });
+      const data = await response.json();
+      if (data.erreur) {
+        setErreurOptimise(data.erreur);
+      } else {
+        setResultatOptimise(data);
+        if (!codeActif) {
+          const newCompteur = compteur + 1;
+          setCompteur(newCompteur);
+          localStorage.setItem("compteur", newCompteur);
+        }
+      }
+    } catch (e) {
+      setErreurOptimise("Erreur de connexion au serveur.");
+    }
+    setLoadingOptimise(false);
+  };
+
   const copierAnnonce = () => {
     if (!resultat) return;
     const texte = `${resultat.titre}\n\n${resultat.description}\n\nPrix : ${resultat.prix}€\n\nMots-clés : ${resultat.mots_cles?.join(", ")}`;
     navigator.clipboard.writeText(texte);
     setCopie(true);
     setTimeout(() => setCopie(false), 2000);
+  };
+
+  const copierAnnonceOptimisee = () => {
+    if (!resultatOptimise) return;
+    const texte = `${resultatOptimise.titre_optimise}\n\n${resultatOptimise.description_optimisee}\n\nPrix : ${resultatOptimise.prix_optimise}€\n\nMots-clés : ${resultatOptimise.mots_cles?.join(", ")}`;
+    navigator.clipboard.writeText(texte);
+    setCopieOptimise(true);
+    setTimeout(() => setCopieOptimise(false), 2000);
   };
 
   const couleurConcurrence = (c) => {
@@ -143,9 +189,9 @@ function App() {
       )}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {["generateur", "historique"].map(o => (
-          <button key={o} onClick={() => setOnglet(o)} style={{ flex: 1, padding: 10, borderRadius: 8, border: "none", cursor: "pointer", fontWeight: "bold", backgroundColor: onglet === o ? "#09B1BA" : "#eee", color: onglet === o ? "white" : "#333" }}>
-            {o === "generateur" ? "✨ Générateur" : "📋 Historique"}
+        {["generateur", "optimiseur", "historique"].map(o => (
+          <button key={o} onClick={() => setOnglet(o)} style={{ flex: 1, padding: 10, borderRadius: 8, border: "none", cursor: "pointer", fontWeight: "bold", backgroundColor: onglet === o ? "#09B1BA" : "#eee", color: onglet === o ? "white" : "#333", fontSize: 13 }}>
+            {o === "generateur" ? "✨ Générateur" : o === "optimiseur" ? "🔧 Optimiseur" : "📋 Historique"}
           </button>
         ))}
       </div>
@@ -171,7 +217,6 @@ function App() {
             </div>
           </div>
 
-          {/* Mode texte ou photo */}
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Mode</label>
             <div style={{ display: "flex", gap: 8 }}>
@@ -307,6 +352,106 @@ function App() {
                 {Array.isArray(resultat.erreurs) && resultat.erreurs.map((e, i) => (
                   <p key={i} style={{ margin: "4px 0", color: "#333", fontSize: 14 }}>❌ {e}</p>
                 ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {onglet === "optimiseur" && (
+        <>
+          <div style={{ padding: 16, backgroundColor: "#e8f8f8", borderRadius: 12, border: "1px solid #09B1BA", marginBottom: 20 }}>
+            <p style={{ margin: 0, color: "#09B1BA", fontWeight: "bold" }}>🔧 Colle ton annonce existante et on l'améliore pour toi !</p>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Plateforme</label>
+            <select value={plateforme} onChange={(e) => setPlateforme(e.target.value)} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", fontSize: 15, color: "white", backgroundColor: "#333" }}>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Vinted</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Leboncoin</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Titre actuel</label>
+            <input value={titreExistant} onChange={(e) => setTitreExistant(e.target.value)} placeholder="Ex: Jean bleu" style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", fontSize: 14, color: "white", backgroundColor: "#333", boxSizing: "border-box" }} />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Description actuelle</label>
+            <textarea value={descExistante} onChange={(e) => setDescExistante(e.target.value)} placeholder="Colle ta description actuelle ici..." style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", height: 110, resize: "vertical", fontSize: 14, boxSizing: "border-box", color: "white", backgroundColor: "#333" }} />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Prix actuel (€)</label>
+            <input value={prixExistant} onChange={(e) => setPrixExistant(e.target.value)} placeholder="Ex: 25" style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", fontSize: 14, color: "white", backgroundColor: "#333", boxSizing: "border-box" }} />
+          </div>
+
+          {erreurOptimise && <p style={{ color: "red", marginBottom: 10 }}>{erreurOptimise}</p>}
+
+          <button onClick={optimiser} disabled={loadingOptimise || !peutGenerer} style={{ width: "100%", padding: 14, backgroundColor: peutGenerer ? "#09B1BA" : "#ccc", color: "white", border: "none", borderRadius: 8, fontSize: 16, cursor: peutGenerer ? "pointer" : "not-allowed", fontWeight: "bold", marginBottom: 20 }}>
+            {loadingOptimise ? "⏳ Optimisation en cours..." : "🔧 Optimiser mon annonce"}
+          </button>
+
+          {resultatOptimise && (
+            <div style={{ marginTop: 10 }}>
+
+              {/* Score avant/après */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📈 Amélioration</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ width: 55, height: 55, borderRadius: "50%", backgroundColor: couleurScore(resultatOptimise.score_avant), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 16, fontWeight: "bold" }}>
+                      {resultatOptimise.score_avant}/10
+                    </div>
+                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>Avant</p>
+                  </div>
+                  <div style={{ fontSize: 24 }}>→</div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ width: 55, height: 55, borderRadius: "50%", backgroundColor: couleurScore(resultatOptimise.score_apres), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 16, fontWeight: "bold" }}>
+                      {resultatOptimise.score_apres}/10
+                    </div>
+                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>Après</p>
+                  </div>
+                </div>
+                <p style={{ margin: 0, color: "#333", fontWeight: "bold" }}>Problèmes détectés :</p>
+                {Array.isArray(resultatOptimise.problemes) && resultatOptimise.problemes.map((p, i) => (
+                  <p key={i} style={{ margin: "2px 0", color: "#ff4444", fontSize: 13 }}>❌ {p}</p>
+                ))}
+                <p style={{ margin: "10px 0 4px", color: "#333", fontWeight: "bold" }}>Améliorations apportées :</p>
+                {Array.isArray(resultatOptimise.ameliorations) && resultatOptimise.ameliorations.map((a, i) => (
+                  <p key={i} style={{ margin: "2px 0", color: "#4CAF50", fontSize: 13 }}>✅ {a}</p>
+                ))}
+              </div>
+
+              {/* Annonce optimisée */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Annonce optimisée</h3>
+                  <button onClick={copierAnnonceOptimisee} style={{ backgroundColor: copieOptimise ? "#4CAF50" : "#09B1BA", color: "white", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontWeight: "bold" }}>
+                    {copieOptimise ? "✅ Copié !" : "📋 Copier"}
+                  </button>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>📌 Nouveau titre</label>
+                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", color: "#333" }}>{resultatOptimise.titre_optimise}</p>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>📝 Nouvelle description</label>
+                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", lineHeight: 1.6, color: "#333" }}>{resultatOptimise.description_optimisee}</p>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>💰 Nouveau prix</label>
+                  <p style={{ backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", margin: "4px 0 0", fontSize: 20, fontWeight: "bold", color: "#09B1BA" }}>{resultatOptimise.prix_optimise} € <span style={{ fontSize: 14, color: "#888" }}>(psychologique : {resultatOptimise.prix_psychologique}€)</span></p>
+                </div>
+                <div>
+                  <label style={{ fontWeight: "bold", color: "#333" }}>🏷️ Mots-clés</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                    {Array.isArray(resultatOptimise.mots_cles) && resultatOptimise.mots_cles.map((mot, i) => (
+                      <span key={i} style={{ backgroundColor: "#09B1BA", color: "white", padding: "4px 12px", borderRadius: 20, fontSize: 14 }}>{mot}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}
