@@ -1,16 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
 app.post('/api/generer', async (req, res) => {
-const { description, plateforme, ton } = req.body;  
+  const { description, plateforme, ton } = req.body;
   try {
-    const Anthropic = require('@anthropic-ai/sdk');
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;    const message = await client.messages.create({
+    const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       messages: [
@@ -20,7 +21,6 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;    const message = awai
         }
       ]
     });
-
     const texte = message.content[0].text;
     console.log('Reponse:', texte);
     const json = JSON.parse(texte.replace(/```json|```/g, '').trim());
@@ -31,5 +31,5 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;    const message = awai
   }
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log('Serveur demarre sur le port ' + PORT));
