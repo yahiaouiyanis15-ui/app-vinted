@@ -171,7 +171,7 @@ function App() {
               {estGratuit ? `✅ ${MAX_GRATUIT - compteur} annonce(s) gratuite(s) restante(s)` : "🔒 Limite atteinte — Abonne-toi !"}
             </span>
             {!estGratuit && (
-              <button onClick={() => window.open("TONLIENSTRIPE", "_blank")} style={{ backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontWeight: "bold" }}>
+              <button onClick={() => window.open("https://buy.stripe.com/4gMeVe99t6qfaKD2TIcfK05", "_blank")} style={{ backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontWeight: "bold" }}>
                 S'abonner 4,99€/mois
               </button>
             )}
