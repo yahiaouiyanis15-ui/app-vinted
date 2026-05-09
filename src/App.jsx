@@ -206,8 +206,13 @@ function App() {
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Plateforme</label>
             <select value={plateforme} onChange={(e) => setPlateforme(e.target.value)} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", fontSize: 15, color: "white", backgroundColor: "#333" }}>
-              <option style={{ color: "white", backgroundColor: "#333" }}>Vinted</option>
-              <option style={{ color: "white", backgroundColor: "#333" }}>Leboncoin</option>
+<option style={{ color: "white", backgroundColor: "#333" }}>Vinted</option>
+<option style={{ color: "white", backgroundColor: "#333" }}>Leboncoin</option>
+<option style={{ color: "white", backgroundColor: "#333" }}>Facebook Marketplace</option>
+<option style={{ color: "white", backgroundColor: "#333" }}>Vestiaire Collective</option>
+<option style={{ color: "white", backgroundColor: "#333" }}>eBay</option>
+<option style={{ color: "white", backgroundColor: "#333" }}>Vide Dressing</option>
+<option style={{ color: "white", backgroundColor: "#333" }}>Wallapop</option>
             </select>
           </div>
 
