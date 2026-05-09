@@ -8,17 +8,7 @@ app.use(express.json({ limit: '10mb' }));
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-app.post('/api/generer', async (req, res) => {
-  const { description, plateforme, ton, image } = req.body;
-  try {
-    const contenu = [];
-    if (image) {
-      contenu.push({ type: 'image', source: { type: 'base64', media_type: image.type, data: image.data } });
-    }
-    contenu.push({
-      type: 'text',
-      text: `Tu es un expert en vente sur ${plateforme}. Ton de l'annonce : ${ton}.
-${image ? "Analyse cette photo et génère une annonce optimisée pour l'article que tu vois." : `Genere une annonce pour : "${description}".`}
+const promptJSON = `
 Reponds UNIQUEMENT avec ce JSON sans texte avant ou apres :
 {
   "titre": "titre accrocheur max 60 caracteres",
@@ -27,6 +17,7 @@ Reponds UNIQUEMENT avec ce JSON sans texte avant ou apres :
   "prix_min": "prix minimum recommande en chiffre",
   "prix_max": "prix maximum recommande en chiffre",
   "prix_psychologique": "prix psychologique recommande ex: 24.99",
+  "prix_marche": "fourchette de prix observee sur le marche ex: 20-35€",
   "mots_cles": ["mot1", "mot2", "mot3", "mot4", "mot5"],
   "concurrence": "faible ou moyenne ou forte",
   "delai_vente": "estimation ex: 2-3 jours",
@@ -36,8 +27,26 @@ Reponds UNIQUEMENT avec ce JSON sans texte avant ou apres :
   "erreurs": ["erreur a eviter 1", "erreur a eviter 2"],
   "score": 8,
   "points_forts": ["point fort 1", "point fort 2"],
-  "points_amelioration": ["amelioration 1", "amelioration 2"]
-}`
+  "points_amelioration": ["amelioration 1", "amelioration 2"],
+  "chances_vente": 75,
+  "chances_explication": "explication courte et directe pourquoi ce pourcentage",
+  "conseils_vente": ["conseil 1 pour augmenter les chances", "conseil 2", "conseil 3"]
+}`;
+
+app.post('/api/generer', async (req, res) => {
+  const { description, plateforme, ton, image } = req.body;
+  try {
+    const contenu = [];
+    if (image) {
+      contenu.push({ type: 'image', source: { type: 'base64', media_type: image.type, data: image.data } });
+    }
+    contenu.push({
+      type: 'text',
+      text: `Tu es un expert en vente sur ${plateforme} avec une connaissance approfondie du marché de la seconde main en France. Ton de l'annonce : ${ton}.
+${image ? "Analyse cette photo et génère une annonce optimisée pour l'article que tu vois." : `Genere une annonce pour : "${description}".`}
+Pour le prix du marché, base toi sur ta connaissance des prix pratiqués sur ${plateforme} pour ce type d'article.
+Pour les chances de vente, sois honnête et direct. Si l'article a peu de chances, dis-le clairement.
+${promptJSON}`
     });
 
     const message = await client.messages.create({

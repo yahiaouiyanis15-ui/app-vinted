@@ -21,7 +21,6 @@ function App() {
   const [imagePreview, setImagePreview] = useState(null);
   const [mode, setMode] = useState("texte");
 
-  // Optimiseur
   const [titreExistant, setTitreExistant] = useState("");
   const [descExistante, setDescExistante] = useState("");
   const [prixExistant, setPrixExistant] = useState("");
@@ -146,6 +145,12 @@ function App() {
     return "#ff4444";
   };
 
+  const couleurChances = (c) => {
+    if (c >= 70) return "#4CAF50";
+    if (c >= 40) return "#ff9900";
+    return "#ff4444";
+  };
+
   const formatPlateforme = (p) => {
     if (!p) return "";
     const lower = p.toLowerCase();
@@ -256,6 +261,8 @@ function App() {
 
           {resultat && (
             <div style={{ marginTop: 10 }}>
+
+              {/* Ton annonce */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Ton annonce</h3>
@@ -281,6 +288,35 @@ function App() {
                 </div>
               </div>
 
+              {/* Chances de vente */}
+              <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
+                <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>🎯 Chances de vente</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+                  <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
+                    <svg viewBox="0 0 36 36" style={{ width: 80, height: 80, transform: "rotate(-90deg)" }}>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#eee" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke={couleurChances(resultat.chances_vente)} strokeWidth="3"
+                        strokeDasharray={`${resultat.chances_vente} ${100 - resultat.chances_vente}`} strokeLinecap="round" />
+                    </svg>
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", fontWeight: "bold", fontSize: 16, color: couleurChances(resultat.chances_vente) }}>
+                      {resultat.chances_vente}%
+                    </div>
+                  </div>
+                  <div>
+                    <p style={{ margin: "0 0 6px", color: "#333", lineHeight: 1.5 }}>{resultat.chances_explication}</p>
+                  </div>
+                </div>
+                {Array.isArray(resultat.conseils_vente) && resultat.conseils_vente.length > 0 && (
+                  <>
+                    <p style={{ margin: "0 0 6px", fontWeight: "bold", color: "#333" }}>💡 Pour augmenter tes chances :</p>
+                    {resultat.conseils_vente.map((c, i) => (
+                      <p key={i} style={{ margin: "2px 0", color: "#09B1BA", fontSize: 13 }}>→ {c}</p>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              {/* Score */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>🏆 Score de l'annonce</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -300,9 +336,14 @@ function App() {
                 ))}
               </div>
 
+              {/* Analyse marché */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📊 Analyse du marché</h3>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Prix du marché</p>
+                    <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#09B1BA" }}>📈 {resultat.prix_marche}</p>
+                  </div>
                   <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
                     <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Concurrence</p>
                     <p style={{ margin: "4px 0 0", fontWeight: "bold", color: couleurConcurrence(resultat.concurrence) }}>{resultat.concurrence}</p>
@@ -322,6 +363,7 @@ function App() {
                 </div>
               </div>
 
+              {/* Prix */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>💰 Optimisation du prix</h3>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -340,6 +382,7 @@ function App() {
                 </div>
               </div>
 
+              {/* Conseils photos */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📸 Conseils photos</h3>
                 {Array.isArray(resultat.photos) && resultat.photos.map((p, i) => (
@@ -347,12 +390,14 @@ function App() {
                 ))}
               </div>
 
+              {/* Erreurs à éviter */}
               <div style={{ padding: 16, backgroundColor: "#fff0f0", borderRadius: 12, border: "1px solid #ffcccc", marginBottom: 16 }}>
                 <h3 style={{ color: "#ff4444", margin: "0 0 12px" }}>⚠️ Erreurs à éviter</h3>
                 {Array.isArray(resultat.erreurs) && resultat.erreurs.map((e, i) => (
                   <p key={i} style={{ margin: "4px 0", color: "#333", fontSize: 14 }}>❌ {e}</p>
                 ))}
               </div>
+
             </div>
           )}
         </>
@@ -395,8 +440,6 @@ function App() {
 
           {resultatOptimise && (
             <div style={{ marginTop: 10 }}>
-
-              {/* Score avant/après */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📈 Amélioration</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
@@ -424,7 +467,6 @@ function App() {
                 ))}
               </div>
 
-              {/* Annonce optimisée */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Annonce optimisée</h3>
