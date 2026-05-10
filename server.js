@@ -4,7 +4,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 app.use(cors({ origin: '*' }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -34,20 +34,42 @@ Reponds UNIQUEMENT avec ce JSON sans texte avant ou apres :
 }`;
 
 app.post('/api/generer', async (req, res) => {
-  const { description, plateforme, ton, image } = req.body;
+  const { description, plateforme, ton, image, images } = req.body;
   try {
     const contenu = [];
-    if (image) {
-      contenu.push({ type: 'image', source: { type: 'base64', media_type: image.type, data: image.data } });
-    }
-    contenu.push({
-      type: 'text',
-      text: `Tu es un expert en vente sur ${plateforme} avec une connaissance approfondie du marché de la seconde main en France. Ton de l'annonce : ${ton}.
-${image ? "Analyse cette photo et génère une annonce optimisée pour l'article que tu vois." : `Genere une annonce pour : "${description}".`}
-Pour le prix du marché, base toi sur ta connaissance des prix pratiqués sur ${plateforme} pour ce type d'article.
-Pour les chances de vente, sois honnête et direct. Si l'article a peu de chances, dis-le clairement.
+
+    if (images && images.length > 0) {
+      images.forEach((img, index) => {
+        contenu.push({ type: 'image', source: { type: 'base64', media_type: img.type, data: img.data } });
+        contenu.push({ type: 'text', text: `Photo ${index + 1} de l'article.` });
+      });
+      contenu.push({
+        type: 'text',
+        text: `Tu es un expert en vente sur ${plateforme}. Ton de l'annonce : ${ton}.
+Analyse ces ${images.length} photos du même article sous différents angles et génère une annonce ultra précise et détaillée.
+Utilise toutes les photos pour décrire au mieux l'état, la marque, la couleur, les détails de l'article.
+Pour le prix du marché, base toi sur ta connaissance des prix pratiqués sur ${plateforme}.
+Pour les chances de vente, sois honnête et direct.
 ${promptJSON}`
-    });
+      });
+    } else if (image) {
+      contenu.push({ type: 'image', source: { type: 'base64', media_type: image.type, data: image.data } });
+      contenu.push({
+        type: 'text',
+        text: `Tu es un expert en vente sur ${plateforme}. Ton de l'annonce : ${ton}.
+Analyse cette photo et génère une annonce optimisée pour l'article que tu vois.
+${promptJSON}`
+      });
+    } else {
+      contenu.push({
+        type: 'text',
+        text: `Tu es un expert en vente sur ${plateforme}. Ton de l'annonce : ${ton}.
+Genere une annonce pour : "${description}".
+Pour le prix du marché, base toi sur ta connaissance des prix pratiqués sur ${plateforme}.
+Pour les chances de vente, sois honnête et direct.
+${promptJSON}`
+      });
+    }
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',

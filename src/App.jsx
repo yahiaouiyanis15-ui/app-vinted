@@ -65,8 +65,7 @@ function App() {
       const response = await fetch("https://app-vinted.onrender.com/api/generer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" ? image : null }),
-      });
+body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && images.length === 1 ? images[0] : null, images: mode === "photo" && images.length > 1 ? images : null }),      });
       const data = await response.json();
       if (data.erreur) {
         setErreur(data.erreur);
@@ -239,12 +238,23 @@ function App() {
             </div>
           </div>
 
-          {mode === "texte" && (
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Décris ton article</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Jean Levis 501 taille 40, bleu, tres bon etat, porte 2 fois..." style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", height: 110, resize: "vertical", fontSize: 14, boxSizing: "border-box", color: "white", backgroundColor: "#333" }} />
-            </div>
-          )}
+{mode === "photo" && (
+  <div style={{ marginBottom: 14 }}>
+    <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Ajoute jusqu'à 4 photos de ton article</label>
+    <input type="file" accept="image/*" multiple onChange={handleImages} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", backgroundColor: "#333", color: "white", boxSizing: "border-box" }} />
+    {imagePreviews.length > 0 && (
+      <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {imagePreviews.map((src, i) => (
+          <div key={i} style={{ position: "relative" }}>
+            <img src={src} alt={`preview ${i+1}`} style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 8, border: "2px solid #09B1BA" }} />
+            <button onClick={() => supprimerImage(i)} style={{ position: "absolute", top: -6, right: -6, backgroundColor: "#ff4444", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          </div>
+        ))}
+      </div>
+    )}
+    {imagePreviews.length > 0 && <p style={{ color: "#09B1BA", fontSize: 13, margin: "8px 0 0" }}>✅ {imagePreviews.length} photo(s) sélectionnée(s) — Plus de photos = annonce plus précise !</p>}
+  </div>
+)}
 
           {mode === "photo" && (
             <div style={{ marginBottom: 14 }}>
