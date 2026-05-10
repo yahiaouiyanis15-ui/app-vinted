@@ -17,10 +17,9 @@ function App() {
   const [codePromo, setCodePromo] = useState("");
   const [codeActif, setCodeActif] = useState(() => localStorage.getItem("codeActif") === "true");
   const [messageCode, setMessageCode] = useState("");
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [mode, setMode] = useState("texte");
-
   const [titreExistant, setTitreExistant] = useState("");
   const [descExistante, setDescExistante] = useState("");
   const [prixExistant, setPrixExistant] = useState("");
@@ -42,21 +41,34 @@ function App() {
     }
   };
 
-  const handleImage = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target.result.split(",")[1];
-      setImage({ data: base64, type: file.type });
-      setImagePreview(ev.target.result);
-    };
-    reader.readAsDataURL(file);
+  const handleImages = (e) => {
+    const files = Array.from(e.target.files).slice(0, 4);
+    const newImages = [];
+    const newPreviews = [];
+    let loaded = 0;
+    files.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        newImages[index] = { data: ev.target.result.split(",")[1], type: file.type };
+        newPreviews[index] = ev.target.result;
+        loaded++;
+        if (loaded === files.length) {
+          setImages(newImages);
+          setImagePreviews(newPreviews);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const supprimerImage = (index) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const generer = async () => {
     if (mode === "texte" && !description.trim()) { setErreur("Decris ton article !"); return; }
-    if (mode === "photo" && !image) { setErreur("Ajoute une photo !"); return; }
+    if (mode === "photo" && images.length === 0) { setErreur("Ajoute au moins une photo !"); return; }
     if (!peutGenerer) { setErreur("Limite gratuite atteinte ! Abonne-toi pour continuer."); return; }
     setLoading(true);
     setErreur("");
@@ -65,7 +77,14 @@ function App() {
       const response = await fetch("https://app-vinted.onrender.com/api/generer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && images.length === 1 ? images[0] : null, images: mode === "photo" && images.length > 1 ? images : null }),      });
+        body: JSON.stringify({
+          description,
+          plateforme,
+          ton,
+          image: mode === "photo" && images.length === 1 ? images[0] : null,
+          images: mode === "photo" && images.length > 1 ? images : null
+        }),
+      });
       const data = await response.json();
       if (data.erreur) {
         setErreur(data.erreur);
@@ -76,7 +95,7 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
           setCompteur(newCompteur);
           localStorage.setItem("compteur", newCompteur);
         }
-        const newHistorique = [{ date: new Date().toLocaleDateString(), plateforme, description: mode === "photo" ? "📷 Analyse photo" : description, ...data }, ...historique].slice(0, 10);
+        const newHistorique = [{ date: new Date().toLocaleDateString(), plateforme, description: mode === "photo" ? `📷 ${images.length} photo(s)` : description, ...data }, ...historique].slice(0, 10);
         setHistorique(newHistorique);
         localStorage.setItem("historique", JSON.stringify(newHistorique));
       }
@@ -160,8 +179,8 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
   return (
     <div style={{ maxWidth: 650, margin: "0 auto", fontFamily: "Arial", padding: 20, minHeight: "100vh" }}>
       <div style={{ textAlign: "center", marginBottom: 24 }}>
-        <h1 style={{ color: "#09B1BA", margin: 0, fontSize: 28 }}>🛍️ AnnonceAI</h1>
-        <p style={{ color: "#888", margin: "4px 0 0" }}>Génère des annonces qui vendent en 5 secondes</p>
+        <h1 style={{ color: "#09B1BA", margin: 0, fontSize: 28 }}>🚀 SellSmart</h1>
+        <p style={{ color: "#888", margin: "4px 0 0" }}>L'IA qui optimise tes annonces sur toutes les plateformes</p>
       </div>
 
       {codeActif ? (
@@ -205,13 +224,13 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Plateforme</label>
             <select value={plateforme} onChange={(e) => setPlateforme(e.target.value)} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", fontSize: 15, color: "white", backgroundColor: "#333" }}>
-<option style={{ color: "white", backgroundColor: "#333" }}>Vinted</option>
-<option style={{ color: "white", backgroundColor: "#333" }}>Leboncoin</option>
-<option style={{ color: "white", backgroundColor: "#333" }}>Facebook Marketplace</option>
-<option style={{ color: "white", backgroundColor: "#333" }}>Vestiaire Collective</option>
-<option style={{ color: "white", backgroundColor: "#333" }}>eBay</option>
-<option style={{ color: "white", backgroundColor: "#333" }}>Vide Dressing</option>
-<option style={{ color: "white", backgroundColor: "#333" }}>Wallapop</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Vinted</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Leboncoin</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Facebook Marketplace</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Vestiaire Collective</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>eBay</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Vide Dressing</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Wallapop</option>
             </select>
           </div>
 
@@ -233,51 +252,44 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                 ✏️ Description texte
               </button>
               <button onClick={() => setMode("photo")} style={{ flex: 1, padding: 10, borderRadius: 8, border: `2px solid ${mode === "photo" ? "#09B1BA" : "#ddd"}`, backgroundColor: mode === "photo" ? "#e8f8f8" : "white", cursor: "pointer", fontWeight: "bold", color: "#333" }}>
-                📷 Analyser une photo
+                📷 Analyser photos
               </button>
             </div>
           </div>
 
-{mode === "photo" && (
-  <div style={{ marginBottom: 14 }}>
-    <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Ajoute jusqu'à 4 photos de ton article</label>
-    <input type="file" accept="image/*" multiple onChange={handleImages} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", backgroundColor: "#333", color: "white", boxSizing: "border-box" }} />
-    {imagePreviews.length > 0 && (
-      <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {imagePreviews.map((src, i) => (
-          <div key={i} style={{ position: "relative" }}>
-            <img src={src} alt={`preview ${i+1}`} style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 8, border: "2px solid #09B1BA" }} />
-            <button onClick={() => supprimerImage(i)} style={{ position: "absolute", top: -6, right: -6, backgroundColor: "#ff4444", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-          </div>
-        ))}
-      </div>
-    )}
-    {imagePreviews.length > 0 && <p style={{ color: "#09B1BA", fontSize: 13, margin: "8px 0 0" }}>✅ {imagePreviews.length} photo(s) sélectionnée(s) — Plus de photos = annonce plus précise !</p>}
-  </div>
-)}
+          {mode === "texte" && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Décris ton article</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Jean Levis 501 taille 40, bleu, tres bon etat, porte 2 fois..." style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", height: 110, resize: "vertical", fontSize: 14, boxSizing: "border-box", color: "white", backgroundColor: "#333" }} />
+            </div>
+          )}
 
           {mode === "photo" && (
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Ajoute une photo de ton article</label>
-              <input type="file" accept="image/*" onChange={handleImage} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", backgroundColor: "#333", color: "white", boxSizing: "border-box" }} />
-              {imagePreview && (
-                <div style={{ marginTop: 10, textAlign: "center" }}>
-                  <img src={imagePreview} alt="preview" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, border: "2px solid #09B1BA" }} />
+              <label style={{ fontWeight: "bold", display: "block", marginBottom: 6, color: "white" }}>Ajoute jusqu'à 4 photos de ton article</label>
+              <input type="file" accept="image/*" multiple onChange={handleImages} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", backgroundColor: "#333", color: "white", boxSizing: "border-box" }} />
+              {imagePreviews.length > 0 && (
+                <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} style={{ position: "relative" }}>
+                      <img src={src} alt={`preview ${i+1}`} style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 8, border: "2px solid #09B1BA" }} />
+                      <button onClick={() => supprimerImage(i)} style={{ position: "absolute", top: -6, right: -6, backgroundColor: "#ff4444", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11 }}>✕</button>
+                    </div>
+                  ))}
                 </div>
               )}
+              {imagePreviews.length > 0 && <p style={{ color: "#09B1BA", fontSize: 13, margin: "8px 0 0" }}>✅ {imagePreviews.length} photo(s) — Plus de photos = annonce plus précise !</p>}
             </div>
           )}
 
           {erreur && <p style={{ color: "red", marginBottom: 10 }}>{erreur}</p>}
 
           <button onClick={generer} disabled={loading || !peutGenerer} style={{ width: "100%", padding: 14, backgroundColor: peutGenerer ? "#09B1BA" : "#ccc", color: "white", border: "none", borderRadius: 8, fontSize: 16, cursor: peutGenerer ? "pointer" : "not-allowed", fontWeight: "bold", marginBottom: 20 }}>
-            {loading ? "⏳ Analyse en cours..." : mode === "photo" ? "📷 Analyser la photo" : "✨ Générer mon annonce"}
+            {loading ? "⏳ Analyse en cours..." : mode === "photo" ? "📷 Analyser les photos" : "✨ Générer mon annonce"}
           </button>
 
           {resultat && (
             <div style={{ marginTop: 10 }}>
-
-              {/* Ton annonce */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ color: "#09B1BA", margin: 0 }}>✅ Ton annonce</h3>
@@ -303,15 +315,13 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                 </div>
               </div>
 
-              {/* Chances de vente */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>🎯 Chances de vente</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
                   <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
                     <svg viewBox="0 0 36 36" style={{ width: 80, height: 80, transform: "rotate(-90deg)" }}>
                       <circle cx="18" cy="18" r="15.9" fill="none" stroke="#eee" strokeWidth="3" />
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke={couleurChances(resultat.chances_vente)} strokeWidth="3"
-                        strokeDasharray={`${resultat.chances_vente} ${100 - resultat.chances_vente}`} strokeLinecap="round" />
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke={couleurChances(resultat.chances_vente)} strokeWidth="3" strokeDasharray={`${resultat.chances_vente} ${100 - resultat.chances_vente}`} strokeLinecap="round" />
                     </svg>
                     <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", fontWeight: "bold", fontSize: 16, color: couleurChances(resultat.chances_vente) }}>
                       {resultat.chances_vente}%
@@ -331,7 +341,6 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                 )}
               </div>
 
-              {/* Score */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>🏆 Score de l'annonce</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -351,7 +360,6 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                 ))}
               </div>
 
-              {/* Analyse marché */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📊 Analyse du marché</h3>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -364,7 +372,7 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                     <p style={{ margin: "4px 0 0", fontWeight: "bold", color: couleurConcurrence(resultat.concurrence) }}>{resultat.concurrence}</p>
                   </div>
                   <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
-                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Délai de vente estimé</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>Délai de vente</p>
                     <p style={{ margin: "4px 0 0", fontWeight: "bold", color: "#333" }}>⏱️ {resultat.delai_vente}</p>
                   </div>
                   <div style={{ flex: 1, minWidth: 140, backgroundColor: "white", padding: 10, borderRadius: 8, border: "1px solid #ddd", textAlign: "center" }}>
@@ -378,7 +386,6 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                 </div>
               </div>
 
-              {/* Prix */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>💰 Optimisation du prix</h3>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -397,7 +404,6 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                 </div>
               </div>
 
-              {/* Conseils photos */}
               <div style={{ padding: 16, backgroundColor: "#f9f9f9", borderRadius: 12, border: "1px solid #ddd", marginBottom: 16 }}>
                 <h3 style={{ color: "#09B1BA", margin: "0 0 12px" }}>📸 Conseils photos</h3>
                 {Array.isArray(resultat.photos) && resultat.photos.map((p, i) => (
@@ -405,14 +411,12 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
                 ))}
               </div>
 
-              {/* Erreurs à éviter */}
               <div style={{ padding: 16, backgroundColor: "#fff0f0", borderRadius: 12, border: "1px solid #ffcccc", marginBottom: 16 }}>
                 <h3 style={{ color: "#ff4444", margin: "0 0 12px" }}>⚠️ Erreurs à éviter</h3>
                 {Array.isArray(resultat.erreurs) && resultat.erreurs.map((e, i) => (
                   <p key={i} style={{ margin: "4px 0", color: "#333", fontSize: 14 }}>❌ {e}</p>
                 ))}
               </div>
-
             </div>
           )}
         </>
@@ -429,6 +433,11 @@ body: JSON.stringify({ description, plateforme, ton, image: mode === "photo" && 
             <select value={plateforme} onChange={(e) => setPlateforme(e.target.value)} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", fontSize: 15, color: "white", backgroundColor: "#333" }}>
               <option style={{ color: "white", backgroundColor: "#333" }}>Vinted</option>
               <option style={{ color: "white", backgroundColor: "#333" }}>Leboncoin</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Facebook Marketplace</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Vestiaire Collective</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>eBay</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Vide Dressing</option>
+              <option style={{ color: "white", backgroundColor: "#333" }}>Wallapop</option>
             </select>
           </div>
 
